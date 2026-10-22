@@ -61,3 +61,9 @@ below to decide *what* to tighten further.
 - [ ] `display_errors` off in prod, `error_reporting` logged not printed
 - [ ] Debug mode off (`APP_DEBUG=false`)
 - [ ] `APP_KEY` / DB passwords rotated and stored in a secret manager
+
+## Known limitations: Termux
+
+- `php-fpm -y fpm/www.conf -t` fails with `Cannot create lock - Permission denied (13)`
+  on Android/Termux (SELinux restriction on php-fpm's shared-memory scoreboard).
+  Not a config error. Validate pool configs in CI instead — see `.github/workflows/ci.yml`.
