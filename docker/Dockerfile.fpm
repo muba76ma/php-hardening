@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+FROM php:8.4-fpm-alpine
+
+# Runtime deps for common extensions
+RUN apk add --no-cache --virtual .build-deps \
+        libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install -j"$(nproc)" gd pdo_mysql mysqli opcache zip mbstring \
+ && apk del .build-deps && rm -rf /var/cache/apk/*
+
+# Hardened ini + pool
+COPY php.ini.d/99-hardening.ini /usr/local/etc/php/conf.d/99-hardening.ini
+COPY fpm/www-hardened.conf      /usr/local/etc/php-fpm.d/zz-hardening.conf
+
+# Send errors to container stderr, log to /proc/self/fd/2
+RUN echo 'error_log = /proc/self/fd/2' \
+      >> /usr/local/etc/php/conf.d/99-hardening.ini
+
+# Pre-create dirs referenced by 99-hardening.ini
+RUN mkdir -p /var/lib/php/sessions /var/lib/php/upload /var/log/php \
+ && chown -R www-data:www-data /var/lib/php /var/log/php
